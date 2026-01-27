@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const asyncWrapper = require('./utils/asyncWrapper');
 const authRoute = require('./routes/authRoute');
+const postRoute = require('./routes/postRoute');
 const errorMiddleware = require('./middleware/errorHandler');
 
 // HTTP headers for security
@@ -17,7 +18,12 @@ app.use(express.json()); // parse JSON
 app.use(express.urlencoded({ extended: true })); // parse form data
 
 // Routes
+
+// Auth
 app.use('/api/auth', authRoute);
+
+// Post
+app.use('/api/posts', postRoute);
 
 // error middleware
 app.use(errorMiddleware);
