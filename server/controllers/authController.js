@@ -115,8 +115,59 @@ const getMe = asyncWrapper(async (req, res, next) => {
     });
 });
 
+// Update user profile
+const updateProfile = asyncWrapper(async (req, res, next) => {
+    const { name, email } = req.body;
+
+    const newUserData = {
+        name,
+        email
+    };
+
+    // If new file is uploaded, handle Cloudinary update
+    if (req.file) {
+        const user = await User.findById(req.user._id);
+
+        // Remove old image from cloudinary if it exists
+        if (user.avatar && user.avatar.public_id) {
+            await cloudinary.uploader.destroy(user.avatar.public_id);
+        }
+
+        const fileUri = getDataUri(req.file);
+        const myCloud = await cloudinary.uploader.upload(fileUri.content, {
+            folder: "skillswap_avatars",
+        });
+
+        newUserData.avatar = {
+            public_id: myCloud.public_id,
+            url: myCloud.secure_url
+        };
+    }
+
+    // Update user in database
+    const user = await User.findByIdAndUpdate(req.user._id, newUserData, {
+        new: true,
+        runValidators: true,
+        useFindAndModify: false
+    });
+
+    // Success response
+    return res.status(200).json({
+        success: true,
+        message: "Profile updated successfully!",
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            helpPoints: user.helpPoints,
+            avatar: user.avatar
+        }
+    });
+});
+
 module.exports = {
     register,
     login,
     getMe,
+    updateProfile,
 };
