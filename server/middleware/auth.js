@@ -15,7 +15,6 @@ const auth = async (req, res, next) => {
             })
         }
 
-
         // If invalid token format
         if (!token.startsWith("Bearer")) {
             return res.status(401).json({

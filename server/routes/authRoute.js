@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login } = require('../controllers/authController');
+const { register, login, getMe } = require('../controllers/authController');
 const auth = require('../middleware/auth');
 const upload = require('../utils/multer');
 
@@ -9,5 +9,8 @@ router.post('/register', upload.single('avatar'), register);
 
 // Post method on login
 router.post('/login', login);
+
+// Get method for current user profile
+router.get('/me', auth, getMe);
 
 module.exports = router;

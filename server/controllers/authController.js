@@ -91,7 +91,32 @@ const login = asyncWrapper(async (req, res, next) => {
     });
 });
 
+// Get current user profile
+const getMe = asyncWrapper(async (req, res, next) => {
+
+    // Find user by ID
+    const user = await User.findById(req.user._id);
+
+    // If user not found in database
+    if (!user) {
+        return next(new ErrorHandlerClass("User not found!", 404));
+    }
+
+    // Success response
+    return res.status(200).json({
+        success: true,
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            helpPoints: user.helpPoints,
+            avatar: user.avatar
+        }
+    });
+});
+
 module.exports = {
     register,
     login,
+    getMe,
 };
