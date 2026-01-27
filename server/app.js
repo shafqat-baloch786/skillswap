@@ -5,6 +5,7 @@ const cors = require('cors');
 const asyncWrapper = require('./utils/asyncWrapper');
 const authRoute = require('./routes/authRoute');
 const postRoute = require('./routes/postRoute');
+const swapRoute = require('./routes/swapRoute');
 const errorMiddleware = require('./middleware/errorHandler');
 
 // HTTP headers for security
@@ -24,6 +25,9 @@ app.use('/api/auth', authRoute);
 
 // Post
 app.use('/api/posts', postRoute);
+
+// Swap
+app.use('/api/swaps', swapRoute);
 
 // error middleware
 app.use(errorMiddleware);
