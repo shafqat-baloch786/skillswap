@@ -2,6 +2,8 @@ const asyncWrapper = require('../utils/asyncWrapper');
 const User = require('../models/User');
 const ErrorHandlerClass = require('../utils/ErrorHandlerClass');
 const generateToken = require('../utils/generateToken');
+const cloudinary = require('cloudinary').v2;
+const getDataUri = require('../utils/dataUri');
 
 // User registration/signup
 const register = asyncWrapper(async (req, res, next) => {
@@ -13,10 +15,30 @@ const register = asyncWrapper(async (req, res, next) => {
         return next(new ErrorHandlerClass('User already exists', 400));
     }
 
+    // Initialize empty avatar data
+    let avatarData = {
+        public_id: "",
+        url: ""
+    };
+
+    // If file is uploaded, send it to cloudinary
+    if (req.file) {
+        const fileUri = getDataUri(req.file);
+        const myCloud = await cloudinary.uploader.upload(fileUri.content, {
+            folder: "skillswap_avatars",
+        });
+
+        avatarData = {
+            public_id: myCloud.public_id,
+            url: myCloud.secure_url
+        };
+    }
+
     const user = await User.create({
         name,
         email,
         password,
+        avatar: avatarData
     });
 
     // Generate json web token and add to response
