@@ -129,7 +129,7 @@ const updateProfile = asyncWrapper(async (req, res, next) => {
         const user = await User.findById(req.user._id);
 
         // Remove old image from cloudinary if it exists
-        if (user.avatar && user.avatar.public_id) {
+        if (user && user.avatar && user.avatar.public_id) {
             await cloudinary.uploader.destroy(user.avatar.public_id);
         }
 
@@ -150,6 +150,10 @@ const updateProfile = asyncWrapper(async (req, res, next) => {
         runValidators: true,
         useFindAndModify: false
     });
+
+    if (!user) {
+        return next(new ErrorHandlerClass("User not found!", 404));
+    }
 
     // Success response
     return res.status(200).json({
