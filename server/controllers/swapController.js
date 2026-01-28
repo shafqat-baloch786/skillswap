@@ -82,7 +82,6 @@ const updateSwapStatus = asyncWrapper(async (req, res, next) => {
     });
 });
 
-// Finalize swap & trigger HelpPoints transfer
 const completeSwap = asyncWrapper(async (req, res, next) => {
     const swap = await Swap.findById(req.params.id);
 
@@ -90,30 +89,21 @@ const completeSwap = asyncWrapper(async (req, res, next) => {
         return next(new ErrorHandlerClass("Swap must be accepted before completion", 400));
     }
 
-    // Find both parties
-    const provider = await User.findById(swap.owner);
-    const receiver = await User.findById(swap.requester);
+    // 1. Transaction Logic: Use findByIdAndUpdate to bypass the pre('save') password hook
+    
+    // Provider (Owner) gets +1
+    await User.findByIdAndUpdate(swap.owner, { $inc: { helpPoints: 1 } });
+    
+    // Receiver (Requester) gets -1
+    await User.findByIdAndUpdate(swap.requester, { $inc: { helpPoints: -1 } });
 
-    // Transaction Rule Logic:
-    // 1. Provider (Teacher) receives +1 Point
-    provider.helpPoints += 1;
-    // 2. Receiver (Learner) is deducted -1 Point
-    receiver.helpPoints -= 1;
-
-    // Save updated points
-    await provider.save();
-    await receiver.save();
-
-    // 3. Update Swap Status to completed
+    // 2. Update Swap Status
     swap.status = "Completed";
-    await swap.save();
+    await swap.save(); // Saving the swap is fine, it doesn't have a password hook!
 
-    // Success response
     return res.status(200).json({
         success: true,
-        message: "Swap completed! HelpPoints transferred successfully.",
-        providerPoints: provider.helpPoints,
-        receiverPoints: receiver.helpPoints
+        message: "Swap completed! HelpPoints transferred successfully."
     });
 });
 
