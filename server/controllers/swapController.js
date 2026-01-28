@@ -48,7 +48,7 @@ const getMySwaps = asyncWrapper(async (req, res, next) => {
             { requester: req.user._id },
             { owner: req.user._id }
         ]
-    }).populate('post', 'title type').populate('requester owner', 'name avatar');
+    }).populate('post', 'title type').populate('requester owner', 'name avatar').sort({ createdAt: -1 });
 
     // Success response
     return res.status(200).json({
