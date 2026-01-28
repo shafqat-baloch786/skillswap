@@ -26,7 +26,13 @@ const createPost = asyncWrapper(async (req, res, next) => {
 // Fetch all skill posts with filters
 const getAllPosts = asyncWrapper(async (req, res, next) => {
     const { category, type } = req.query;
+    
     let query = {};
+
+    // Only exclude current user's own posts if logged in
+    if (req.user && req.user._id) {
+        query.owner = { $ne: req.user._id };
+    }
 
     // Apply category filter if provided
     if (category) {
@@ -48,6 +54,18 @@ const getAllPosts = asyncWrapper(async (req, res, next) => {
         posts
     });
 });
+
+// Fetch only the logged-in user's posts
+const getMyPosts = asyncWrapper(async (req, res, next) => {
+    // Find posts where owner is current user
+    const posts = await Post.find({ owner: req.user._id });
+
+    return res.status(200).json({
+        success: true,
+        posts
+    });
+});
+
 
 // Get specific post details
 const getPostById = asyncWrapper(async (req, res, next) => {
@@ -95,5 +113,6 @@ module.exports = {
     createPost,
     getAllPosts,
     getPostById,
-    deletePost
+    deletePost,
+    getMyPosts,
 };

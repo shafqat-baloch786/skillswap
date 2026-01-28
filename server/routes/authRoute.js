@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { register, login, getMe, updateProfile } = require('../controllers/authController');
-const auth = require('../middleware/auth');
+const { auth, catchUser } = require('../middleware/auth');
 const upload = require('../utils/multer');
 
 // Post method on register with avatar upload

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { 
     sendSwapRequest, getMySwaps, updateSwapStatus, completeSwap } = require('../controllers/swapController');
-const auth = require('../middleware/auth');
+const { auth, catchUser } = require('../middleware/auth');
 
 // Send a new swap request
 router.post('/request', auth, sendSwapRequest);

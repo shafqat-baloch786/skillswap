@@ -32,8 +32,28 @@ const auth = async (req, res, next) => {
 
     } catch (error) {
         console.log("Error in auth!", error);
+        return res.status(401).json({ success: false, message: "Invalid or expired token" });
     }
 }
 
+// Catch user to check if user is owner or not
+const catchUser = async (req, res, next) => {
+    try {
+        let token = req.headers.authorization;
 
-module.exports = auth; 
+        // If there is a token, try to identify the user
+        if (token && token.startsWith("Bearer")) {
+            token = token.split(' ')[1];
+            const decode = jwt.verify(token, process.env.JWT_SECRET);
+            const user = await User.findById(decode.id).select('_id name email helpPoints');
+            req.user = user; 
+        }
+        // Always move to next(), even if no token is found
+        next();
+    } catch (error) {
+        // If token is invalid/expired, we don't care, let them browse as a guest
+        next();
+    }
+}
+
+module.exports = { auth, catchUser }
