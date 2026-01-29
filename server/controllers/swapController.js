@@ -3,6 +3,7 @@ const Swap = require('../models/Swap');
 const Post = require('../models/Post');
 const User = require('../models/User');
 const ErrorHandlerClass = require('../utils/ErrorHandlerClass');
+const { sendMeetingEmail } = require('../utils/emailHandler');
 
 // Send a swap request to a skill provider
 const sendSwapRequest = asyncWrapper(async (req, res, next) => {
@@ -59,7 +60,8 @@ const getMySwaps = asyncWrapper(async (req, res, next) => {
 
 // Update status
 const updateSwapStatus = asyncWrapper(async (req, res, next) => {
-    const { status } = req.body;
+    // Destructure status and meeting details from request body
+    const { status, meetingDate, meetingTime, meetingLink } = req.body;
     const swap = await Swap.findById(req.params.id);
 
     if (!swap) {
@@ -71,8 +73,25 @@ const updateSwapStatus = asyncWrapper(async (req, res, next) => {
         return next(new ErrorHandlerClass("Not authorized to update this status", 401));
     }
 
+    // Apply status change
     swap.status = status;
     await swap.save();
+
+    // Trigger Notification: If request is accepted, send meeting details via email
+    if (status === 'Accepted') {
+        // Populate requester and post info to provide details for the email template
+        const details = await Swap.findById(swap._id)
+            .populate('requester', 'email name')
+            .populate('post', 'title');
+
+        await sendMeetingEmail(details.requester.email, {
+            requesterName: details.requester.name,
+            postTitle: details.post?.title || "Skill Swap",
+            meetingDate,
+            meetingTime,
+            meetingLink
+        });
+    }
 
     // Success response
     return res.status(200).json({
@@ -89,7 +108,6 @@ const completeSwap = asyncWrapper(async (req, res, next) => {
         return next(new ErrorHandlerClass("Swap must be accepted before completion", 400));
     }
 
-    // 1. Transaction Logic: Use findByIdAndUpdate to bypass the pre('save') password hook
     
     // Provider (Owner) gets +1
     await User.findByIdAndUpdate(swap.owner, { $inc: { helpPoints: 1 } });
@@ -99,7 +117,7 @@ const completeSwap = asyncWrapper(async (req, res, next) => {
 
     // 2. Update Swap Status
     swap.status = "Completed";
-    await swap.save(); // Saving the swap is fine, it doesn't have a password hook!
+    await swap.save();
 
     return res.status(200).json({
         success: true,
