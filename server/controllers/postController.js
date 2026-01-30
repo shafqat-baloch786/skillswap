@@ -26,7 +26,7 @@ const createPost = asyncWrapper(async (req, res, next) => {
 // Fetch all skill posts with filters
 const getAllPosts = asyncWrapper(async (req, res, next) => {
     const { category, type } = req.query;
-    
+
     let query = {};
 
     // Only exclude current user's own posts if logged in
@@ -45,7 +45,8 @@ const getAllPosts = asyncWrapper(async (req, res, next) => {
     }
 
     // Find posts and populate owner details
-    const posts = await Post.find(query).populate('owner', 'name avatar helpPoints');
+    const posts = await Post.find(query).populate('owner', 'name avatar helpPoints')
+        .sort({ createdAt: -1 });
 
     // Success response
     return res.status(200).json({
@@ -58,7 +59,8 @@ const getAllPosts = asyncWrapper(async (req, res, next) => {
 // Fetch only the logged-in user's posts
 const getMyPosts = asyncWrapper(async (req, res, next) => {
     // Find posts where owner is current user
-    const posts = await Post.find({ owner: req.user._id });
+    const posts = await Post.find({ owner: req.user._id })
+        .sort({ createdAt: -1 });
 
     return res.status(200).json({
         success: true,
@@ -69,7 +71,7 @@ const getMyPosts = asyncWrapper(async (req, res, next) => {
 
 // Get specific post details
 const getPostById = asyncWrapper(async (req, res, next) => {
-    
+
     // Find post by ID and populate owner
     const post = await Post.findById(req.params.id).populate('owner', 'name avatar helpPoints');
 
@@ -87,7 +89,7 @@ const getPostById = asyncWrapper(async (req, res, next) => {
 
 // Remove a post
 const deletePost = asyncWrapper(async (req, res, next) => {
-    
+
     const post = await Post.findById(req.params.id);
 
     // If post not found
