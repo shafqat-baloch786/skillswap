@@ -3,7 +3,7 @@ const Swap = require('../models/Swap');
 const Post = require('../models/Post');
 const User = require('../models/User');
 const ErrorHandlerClass = require('../utils/ErrorHandlerClass');
-const { sendMeetingEmail } = require('../utils/emailHandler');
+const { sendMeetingEmail, sendOwnerConfirmationEmail } = require('../utils/emailHandler');
 
 // Send a swap request to a skill provider
 const sendSwapRequest = asyncWrapper(async (req, res, next) => {
@@ -82,6 +82,7 @@ const updateSwapStatus = asyncWrapper(async (req, res, next) => {
         // Populate requester and post info to provide details for the email template
         const details = await Swap.findById(swap._id)
             .populate('requester', 'email name')
+            .populate('owner', 'email name')
             .populate('post', 'title');
 
         await sendMeetingEmail(details.requester.email, {
@@ -89,7 +90,20 @@ const updateSwapStatus = asyncWrapper(async (req, res, next) => {
             postTitle: details.post?.title || "Skill Swap",
             meetingDate,
             meetingTime,
-            meetingLink
+            meetingLink,
+            accepterName: details.owner.name,
+            accepterEmail: details.owner.email
+        });
+
+        // Send confirmation email to the person who accepted (the Owner)
+        await sendOwnerConfirmationEmail(details.owner.email, {
+            ownerName: details.owner.name,
+            postTitle: details.post?.title || "Skill Swap",
+            meetingDate,
+            meetingTime,
+            meetingLink,
+            partnerName: details.requester.name,
+            partnerEmail: details.requester.email
         });
     }
 
