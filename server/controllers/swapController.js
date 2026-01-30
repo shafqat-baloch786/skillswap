@@ -42,7 +42,7 @@ const sendSwapRequest = asyncWrapper(async (req, res, next) => {
 
 // List all incoming and outgoing requests
 const getMySwaps = asyncWrapper(async (req, res, next) => {
-    
+
     // Find swaps where user is either the requester or the owner
     const swaps = await Swap.find({
         $or: [
@@ -102,18 +102,19 @@ const updateSwapStatus = asyncWrapper(async (req, res, next) => {
 });
 
 const completeSwap = asyncWrapper(async (req, res, next) => {
-    const swap = await Swap.findById(req.params.id);
+    const swap = await Swap.findById(req.params.id).populate('post');
 
     if (!swap || swap.status !== "Accepted") {
         return next(new ErrorHandlerClass("Swap must be accepted before completion", 400));
     }
 
-    
-    // Provider (Owner) gets +1
-    await User.findByIdAndUpdate(swap.owner, { $inc: { helpPoints: 1 } });
-    
-    // Receiver (Requester) gets -1
-    await User.findByIdAndUpdate(swap.requester, { $inc: { helpPoints: -1 } });
+    // Determine provider and receiver based on post type and transfer 1 helpPoint between them
+    const isOffer = swap.post.type === "Offer";
+    const providerId = isOffer ? swap.owner : swap.requester;
+    const receiverId = isOffer ? swap.requester : swap.owner;
+
+    await User.findByIdAndUpdate(providerId, { $inc: { helpPoints: 1 } });
+    await User.findByIdAndUpdate(receiverId, { $inc: { helpPoints: -1 } });
 
     // 2. Update Swap Status
     swap.status = "Completed";
