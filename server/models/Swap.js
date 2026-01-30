@@ -20,7 +20,16 @@ const swapSchema = new mongoose.Schema({
         type: String,
         enum: ["Pending", "Accepted", "Rejected", "Completed"],
         default: "Pending"
-    }
+    },
+    meetingDate: {
+        type: String
+    },
+    meetingTime: {
+        type: String
+    },
+    meetingLink: {
+        type: String
+    },
 }, { timestamps: true });
 
 // Swap model

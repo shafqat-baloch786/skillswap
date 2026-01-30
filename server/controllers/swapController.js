@@ -49,7 +49,7 @@ const getMySwaps = asyncWrapper(async (req, res, next) => {
             { requester: req.user._id },
             { owner: req.user._id }
         ]
-    }).populate('post', 'title type').populate('requester owner', 'name avatar').sort({ createdAt: -1 });
+    }).populate('post', 'title type').populate('requester owner', 'name avatar email').sort({ createdAt: -1 });
 
     // Success response
     return res.status(200).json({
@@ -75,6 +75,13 @@ const updateSwapStatus = asyncWrapper(async (req, res, next) => {
 
     // Apply status change
     swap.status = status;
+
+    // Save schedule details to database if accepted
+    if (status === 'Accepted') {
+        swap.meetingDate = meetingDate;
+        swap.meetingTime = meetingTime;
+        swap.meetingLink = meetingLink;
+    }
     await swap.save();
 
     // Trigger Notification: If request is accepted, send meeting details via email
@@ -115,6 +122,8 @@ const updateSwapStatus = asyncWrapper(async (req, res, next) => {
     });
 });
 
+
+// Complete swap
 const completeSwap = asyncWrapper(async (req, res, next) => {
     const swap = await Swap.findById(req.params.id).populate('post');
 
