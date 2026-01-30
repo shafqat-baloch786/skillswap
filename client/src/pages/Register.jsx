@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Loader2, Zap, ShieldCheck, User, Camera, Globe, Code2 } from 'lucide-react';
 import API from '../api/axios';
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 const Register = () => {
     const [name, setName] = useState('');
@@ -9,7 +10,9 @@ const Register = () => {
     const [password, setPassword] = useState('');
     const [avatar, setAvatar] = useState(null);
     const [loading, setLoading] = useState(false);
+    
     const navigate = useNavigate();
+    const { login } = useAuth(); // Access login from context
 
     const handleFileChange = (e) => {
         setAvatar(e.target.files[0]);
@@ -17,6 +20,12 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Basic Frontend Validation
+        if (password.length < 6) {
+            return alert("Password must be at least 6 characters long.");
+        }
+
         setLoading(true);
 
         const myForm = new FormData();
@@ -28,16 +37,25 @@ const Register = () => {
         }
 
         try {
-            await API.post('/auth/register', myForm, {
+            // 1. Send Registration Request
+            const { data } = await API.post('/auth/register', myForm, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
-            alert("Registration successful! Now please login.");
-            navigate('/login');
+
+            // 2. Auto-Login logic
+            // Assuming your backend returns { success: true, user, token }
+            if (data.token) {
+                // We call login from context so the app knows we are authenticated
+                await login(email, password); 
+                navigate('/dashboard');
+            } else {
+                alert("Account created! Please sign in.");
+                navigate('/login');
+            }
         } catch (err) {
             console.error(err);
             alert(err.response?.data?.message || "Registration failed");
-        } finally {
-            setLoading(false);
+            setLoading(false); // Only stop loading if it fails
         }
     };
 
@@ -50,7 +68,6 @@ const Register = () => {
                 
                 <div className="hidden lg:flex bg-[#131c31] p-12 flex-col justify-between relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-indigo-600/20 to-transparent pointer-events-none"></div>
-                    
                     <div className="relative z-10">
                         <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/30">
                             <Zap className="text-white fill-white" size={24} />
@@ -65,7 +82,6 @@ const Register = () => {
                             The decentralized way to master new skills through community exchange.
                         </p>
                     </div>
-
                     <div className="relative z-10"> 
                         <div className="space-y-4 mb-8">
                             <div className="flex items-center space-x-4 text-slate-200">
@@ -104,7 +120,6 @@ const Register = () => {
                             </div>
                         </div>
 
-                        {/* Updated Input Text/Placeholder sizes below */}
                         <div className="group space-y-1 border-b-2 border-[#333131] focus-within:border-indigo-600 transition-all pb-1">
                             <label className="text-[12px] font-black uppercase tracking-[0.2em] text-[#333131]">Full Name</label>
                             <div className="flex items-center">
@@ -113,7 +128,7 @@ const Register = () => {
                                     type="text" 
                                     required 
                                     placeholder="John Doe" 
-                                    className="w-full py-1 bg-transparent outline-none font-bold text-[#333131] text-base placeholder:text-slate-400 placeholder:text-sm" 
+                                    className="w-full py-1 bg-transparent outline-none font-bold text-[#333131] text-base placeholder:text-slate-400" 
                                     onChange={(e) => setName(e.target.value)} 
                                 />
                             </div>
@@ -127,7 +142,7 @@ const Register = () => {
                                     type="email" 
                                     required 
                                     placeholder="you@example.com" 
-                                    className="w-full py-1 bg-transparent outline-none font-bold text-[#333131] text-base placeholder:text-slate-400 placeholder:text-sm" 
+                                    className="w-full py-1 bg-transparent outline-none font-bold text-[#333131] text-base placeholder:text-slate-400" 
                                     onChange={(e) => setEmail(e.target.value)} 
                                 />
                             </div>
@@ -140,8 +155,8 @@ const Register = () => {
                                 <input 
                                     type="password" 
                                     required 
-                                    placeholder="••••••••" 
-                                    className="w-full py-1 bg-transparent outline-none font-bold text-[#333131] text-base placeholder:text-slate-400 placeholder:text-sm" 
+                                    placeholder="Min. 6 characters" 
+                                    className="w-full py-1 bg-transparent outline-none font-bold text-[#333131] text-base placeholder:text-slate-400" 
                                     onChange={(e) => setPassword(e.target.value)} 
                                 />
                             </div>

@@ -1,12 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import API from '../api/axios';
-import { Clock, Trash2 } from 'lucide-react';
+import { Clock, Trash2, Plus } from 'lucide-react'; // Added Plus icon
 
 const MyPosts = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+
+    // --- Create Post Logic States ---
+    const [isCreating, setIsCreating] = useState(false);
+    const [newPost, setNewPost] = useState({ title: '', category: '', description: '', type: 'Offer' });
+    const [isOtherCategory, setIsOtherCategory] = useState(false);
+
+    const categories = [
+        "Programming & Tech", "Design & Creative", "Business & Marketing",
+        "Languages", "Music & Arts", "Health & Fitness",
+        "Academic Tutoring", "Lifestyle & Hobbies", "Other"
+    ];
 
     const getTimeAgo = (date) => {
         const seconds = Math.floor((new Date() - new Date(date)) / 1000);
@@ -34,8 +45,23 @@ const MyPosts = () => {
         fetchMyPosts();
     }, []);
 
+    // --- Handle Create Post ---
+    const handleCreatePost = async (e) => {
+        e.preventDefault();
+        try {
+            await API.post('/posts', newPost);
+            alert("Post created successfully! 🚀");
+            setIsCreating(false);
+            setIsOtherCategory(false);
+            setNewPost({ title: '', category: '', description: '', type: 'Offer' });
+            fetchMyPosts(); // Refresh list after creation
+        } catch (err) {
+            alert(err.response?.data?.message || "Failed to create post");
+        }
+    };
+
     const handleDelete = async (e, id) => {
-        e.stopPropagation(); // Prevent navigating to details when clicking delete
+        e.stopPropagation();
         if (!window.confirm("Are you sure you want to delete this listing?")) return;
         try {
             await API.delete(`/posts/${id}`);
@@ -52,6 +78,14 @@ const MyPosts = () => {
                     <h1 className="text-4xl font-black text-slate-900 tracking-tight italic">My Listings.</h1>
                     <p className="text-slate-500 font-bold uppercase text-[11px] tracking-[0.2em] mt-2">Manage your skill offers and requests</p>
                 </div>
+                {/* NEW CREATE BUTTON */}
+                <button 
+                    onClick={() => setIsCreating(true)}
+                    className="flex items-center space-x-2 bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all active:scale-95"
+                >
+                    <Plus size={18} />
+                    <span>Create New</span>
+                </button>
             </header>
 
             {loading ? (
@@ -63,7 +97,6 @@ const MyPosts = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                     {posts.map((post) => {
                         const isOffer = post.type === 'Offer';
-                        
                         return (
                             <div 
                                 key={post._id} 
@@ -128,9 +161,65 @@ const MyPosts = () => {
             {posts.length === 0 && !loading && (
                 <div className="text-center py-32 bg-slate-50 rounded-[4rem] border-2 border-dashed border-slate-200">
                     <p className="text-slate-400 font-black text-xs uppercase tracking-widest mb-4">You haven't posted any skills yet.</p>
-                    <Link to="/dashboard" className="inline-block bg-[#333131] text-white px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 transition-all">
+                    <button 
+                        onClick={() => setIsCreating(true)} 
+                        className="inline-block bg-[#333131] text-white px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 transition-all"
+                    >
                         Create Your First Post
-                    </Link>
+                    </button>
+                </div>
+            )}
+
+            {/* --- MODAL FROM DASHBOARD --- */}
+            {isCreating && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-[2rem] p-8 w-full max-w-lg shadow-2xl">
+                        <h2 className="text-2xl font-black text-slate-800 mb-6 tracking-tight italic">Create a New Post.</h2>
+                        <form onSubmit={handleCreatePost} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1">Title</label>
+                                <input className="w-full p-4 rounded-xl border border-slate-100 bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Master React in 30 Days" value={newPost.title} onChange={e => setNewPost({...newPost, title: e.target.value})} required />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1">Category</label>
+                                <select 
+                                    className="w-full p-4 rounded-xl border border-slate-100 bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500 font-medium mb-3"
+                                    value={isOtherCategory ? "Other" : (newPost.category || "")}
+                                    onChange={(e) => {
+                                        if (e.target.value === "Other") {
+                                            setIsOtherCategory(true);
+                                            setNewPost({ ...newPost, category: '' });
+                                        } else {
+                                            setIsOtherCategory(false);
+                                            setNewPost({ ...newPost, category: e.target.value });
+                                        }
+                                    }}
+                                    required
+                                >
+                                    <option value="" disabled>Select a category</option>
+                                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                </select>
+                                {isOtherCategory && (
+                                    <input className="w-full p-4 rounded-xl border border-indigo-200 bg-indigo-50/30 outline-none focus:ring-2 focus:ring-indigo-500 font-medium" placeholder="Type your custom category..." value={newPost.category} onChange={e => setNewPost({...newPost, category: e.target.value})} autoFocus required />
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1">Post Type</label>
+                                <select className="w-full p-4 rounded-xl border border-slate-100 bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500 font-medium" value={newPost.type} onChange={e => setNewPost({...newPost, type: e.target.value})} required>
+                                    <option value="Offer">Offering to teach</option>
+                                    <option value="Request">Requesting to learn</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1">Description</label>
+                                <textarea className="w-full p-4 rounded-xl border border-slate-100 bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500 h-32" placeholder="Tell us more about what you can share..." value={newPost.description} onChange={e => setNewPost({...newPost, description: e.target.value})} required />
+                            </div>
+                            <div className="flex space-x-3 pt-4">
+                                <button type="button" onClick={() => { setIsCreating(false); setIsOtherCategory(false); }} className="flex-1 py-4 font-bold text-slate-500">Cancel</button>
+                                <button type="submit" className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 shadow-lg">Create Post</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>
