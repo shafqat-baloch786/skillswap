@@ -7,7 +7,25 @@ Built with a **MERN stack**, SkillSwap enables structured peer-to-peer learning 
 > **Author:** Shafqat Baloch  
 > **Status:** MVP / Hackathon-ready
 
+---
 
+## 💡 Problem & Solution
+
+### Problem: Limitations in Existing Learning Platforms
+Millions of people want to learn practical skills, but current options have major limitations:
+
+- Paid platforms are expensive and not accessible to everyone.  
+- Free platforms lack accountability — users often ghost or fail to deliver.  
+- No neutral system exists to ensure fairness in skill exchanges.  
+- Skill value is asymmetric; someone may be great at one skill but need help in another.
+
+### Solution: How SkillSwap Fixes This
+**SkillSwap** addresses these challenges with a credit-based, skill-for-skill exchange:
+
+- Users can **offer skills** they can teach and **request skills** they want to learn.  
+- **HelpPoints system** ensures fairness — you must help to get help.  
+- Scheduled sessions and completion verification prevent ghosting.  
+- Transparent tracking guarantees fair exchanges, trust, and commitment.  
 
 ---
 
